@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-LISTEN_PORT = 8000
-SERVER_PORT = 4431
-SERVER_ADDR = "127.0.0.1"
+LISTEN_PORT = 443
+SERVER_PORT = 443
+SERVER_ADDR = "64.233.183.102"
 import dpkt
 from twisted.internet import protocol, reactor
 from twisted.python import log
@@ -25,6 +25,11 @@ class ServerProtocol(protocol.Protocol):
 
     # Client => Proxy
     def dataReceived(self, data):
+        print "Received data from Client"
+        '''var = raw_input("Do you want to Drop this: ")
+        if(var=="y"):
+          data=""
+        else:'''
         makeDecision(data)
         if self.client:
             self.client.write(data)
@@ -44,6 +49,11 @@ class ClientProtocol(protocol.Protocol):
 
     # Server => Proxy
     def dataReceived(self, data):
+        print "Received data from Server"
+        '''var = raw_input("Do you want to Drop this: ")
+        if(var=="y"):
+          data=""
+        else:'''
         makeDecision(data)
         self.factory.server.write(data)
 
@@ -76,29 +86,33 @@ def handleTLSChangeCipherSpec(record):
 
 
 def makeDecision(data):
+
   counters = defaultdict(int)
   DROP = 0
   records = []
+  print "Length of the Data %s" % len(data)
   try:
       records, bytes_used = dpkt.ssl.TLSMultiFactory(data)
+      print "Bytes_Parsed %s " % bytes_used
   except dpkt.ssl.SSL3Exception, e:
     print e
 
   if len(records) <= 0:
-    print "oh"
-  print "\nGot a new TCP packet..."
-  print "Number of SSL Records - %s"% len(records)
-  for record in records:
-      # TLS handshake only
-      if record.type == 22:
-          DROP = handleTLSHandshake(record)
-      elif record.type== 21:
-          DROP = handleTLSAlert(record)
-      elif record.type == 20:
-          DROP = handleTLSChangeCipherSpec(record)
-      elif record.type == 23:
-          DROP = handleTLSAppData(record)
-  return DROP
+    print "Didn't find Record"
+  else:
+    print "Number of SSL Records - %s"% len(records)
+    for record in records:
+        # TLS handshake only
+        if record.type == 22:
+
+            handleTLSHandshake(record)
+        elif record.type== 21:
+            handleTLSAlert(record)
+        elif record.type == 20:
+            handleTLSChangeCipherSpec(record)
+        elif record.type == 23:
+            handleTLSAppData(record)
+
 def main():
     factory = protocol.ServerFactory()
     factory.protocol = ServerProtocol
