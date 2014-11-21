@@ -5,6 +5,8 @@ SERVER_ADDR = "128.105.175.15"
 import dpkt
 from twisted.internet import protocol, reactor
 from twisted.python import log
+import logging
+logger = logging.getLogger(__name__)
 import sys
 import logic
 from collections import defaultdict
@@ -26,7 +28,7 @@ class ServerProtocol(protocol.Protocol):
 
     # Client => Proxy
     def dataReceived(self, data):
-        print "Received data from Client"
+        logger.debug("Received packet from the server")
         '''var = raw_input("Do you want to Drop this: ")
         if(var=="y"):
           data=""
@@ -50,13 +52,9 @@ class ClientProtocol(protocol.Protocol):
 
     # Server => Proxy
     def dataReceived(self, data):
-        print "Received data from Server"
-        '''var = raw_input("Do you want to Drop this: ")
-        if(var=="y"):
-          data=""
-        else:'''
-        newData = logic.driver(data)
-        self.factory.server.write(newData)
+      logger.debug("Received Data from the server")
+      newData = logic.driver(data)
+      self.factory.server.write(newData)
 
     # Proxy => Server
     def write(self, data):
@@ -125,4 +123,6 @@ def main():
 
 
 if __name__ == '__main__':
+    import logging.config
+    logging.basicConfig(format='%(levelname)s:%(asctime)s:%(message)s',filename='tlsator.log',filemode='w', level=logging.DEBUG)
     main()
