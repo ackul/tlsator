@@ -6,6 +6,7 @@ import dpkt
 from twisted.internet import protocol, reactor
 from twisted.python import log
 import sys
+import logic
 from collections import defaultdict
 import binascii
 DEBUG = False
@@ -30,7 +31,7 @@ class ServerProtocol(protocol.Protocol):
         if(var=="y"):
           data=""
         else:'''
-        makeDecision(data)
+        #logic.driver(data)
         if self.client:
             self.client.write(data)
         else:
@@ -54,8 +55,8 @@ class ClientProtocol(protocol.Protocol):
         if(var=="y"):
           data=""
         else:'''
-        makeDecision(data)
-        self.factory.server.write(data)
+        newData = logic.driver(data)
+        self.factory.server.write(newData)
 
     # Proxy => Server
     def write(self, data):
@@ -92,9 +93,9 @@ def makeDecision(data):
   records = []
   print "Length of the Data %s" % len(data)
   hexStr = binascii.b2a_hex(data)
-  #print hexStr
+  print hexStr
   try:
-      records, bytes_used = dpkt.ssl.TLSMultiFactoryAK(data)
+      records, bytes_used = dpkt.ssl.TLSMultiFactory(data)
       print "Bytes_Parsed %s " % bytes_used
   except dpkt.ssl.SSL3Exception, e:
     print e
