@@ -1,6 +1,7 @@
 import dpkt
 import binascii
 import struct
+import sys
 incRecordBuffer = b''
 incRecordBufferStruct = ''
 dataOffsetInTheNextPacket = 0
@@ -8,6 +9,10 @@ incRecordBufferDrop = 0
 recordCount = 0
 import logging
 logger = logging.getLogger(__name__)
+d=dict()
+analyze = False
+recordnosList = []
+
 #need to
 #structure which would have length, type etc
 
@@ -17,16 +22,62 @@ class incStruct():
     self.version = recversion
     self.length = reclength
 
-def displayAndKeepRecord(record):
+def displayRecord(record):
+  if record.type == 22:
+    logger.info("TLS Handshake Record")
+  elif record.type== 21:
+    logger.info("TLS Alert Record")
+  elif record.type == 20:
+    logger.info("TLS ChangeCipherSpec")
+  elif record.type == 23:
+    logger.info("TLS Application Data")
+  logger.debug('Received Record: \nRecord Type-%d\nRecord Length-%d\n',record.type,record.length)
+
+def keepRecord(record, count):
+  global recordnosList
+  #print count
+  #print len(recordnosList)
+  if(len(recordnosList)):
+    if count in recordnosList:
+      logger.info("We have reached Record count - %d", count)
+      decision = raw_input("do you want to cancel this record y/n?: ")
+      if(decision == "y"):
+        print "Returning 0"
+        return 0
   return 1
 
+RECORD_TYPE = {
+    20: 'TLSChangeCipherSpec',
+    21: 'TLSAlert',
+    22: 'TLSHandshake',
+    23: 'TLSAppData',
+}
+
+def printDictionary(d):
+  logger.info("Record Stats are as follows:")
+  for key in d:
+    print RECORD_TYPE[key]
+    logger.debug("%s",RECORD_TYPE[key])
+    for val in d[key]:
+      sys.stdout.write('('+str(val)+')')
+    sys.stdout.write('\n')
+  logger.debug("Now the alert record would be handled")
+
+
+def displayAndKeepRecord(record, count):
+  displayRecord(record)
+  return keepRecord(record, count)
+
 def driver(data):
+
   logger.info('Driver-SSL data of length %d',len(data))
   global incRecordBuffer
   global incRecordBufferStruct
   global dataOffsetInTheNextPacket
   global incRecordBufferDrop
   global recordCount
+  global d
+  global analyze
   #This is the TCP data recevied from the server
   dataLen = len(data)
   #Since we have completed handshake, this should be a SSL packet hoping :P
@@ -52,7 +103,7 @@ def driver(data):
         logger.debug('Pending Record - Drop flag is 0, returning data')
         return data
     else:
-      logger.info('Pending Record - Incomplete record completes in this packet')
+      logger.debug('Pending Record - Incomplete record completes in this packet')
 
     if(len(incRecordBuffer)):
       logger.debug('Record Buffer Adjust - Packet with incomplete Record')
@@ -74,7 +125,7 @@ def driver(data):
   bytes_left = len(data) - i;
   #DEBUG
 
-
+  oldRecordCount = recordCount
   recordArr = []
   while (bytes_left > 0):
     try:
@@ -82,6 +133,15 @@ def driver(data):
       logger.debug('Before Multifactory - bytes left %s',bytes_left)
       record,bytes_parsed,incFlag,incRecLength = dpkt.ssl.TLSMultiFactoryAK(data[i:])
       recordCount += 1
+
+      key = record.type
+      if key in d:
+        d[key].append(recordCount)
+      else:
+        d[key] = [recordCount]
+      if (key == 21 and analyze):
+        printDictionary(d)
+
       #print record.type
       logger.debug('Multifactory Output: \nStart Position-%d\nbytes parsed -%d\nincFlag-%d\nincRecLength-%d\nRecord Count-%d', i, bytes_parsed,incFlag,incRecLength,recordCount)
 
@@ -98,6 +158,7 @@ def driver(data):
         break
       elif (len(record)):
         #This takes care of the situation where the packet has a complete record
+
         recordArr.append(record)
         logger.debug('Appended RecordArr: length of recordArr-%d', len(recordArr))
         bytes_left = bytes_left - bytes_parsed
@@ -106,9 +167,23 @@ def driver(data):
       logger.debug('Exception: %s', e)
 
   #Now we have the record Buffer, lets display that to the user and make decision
-
+  logger.debug('Got %d Full Records in this packet',len(recordArr))
+  #this is to get the value of record count
+  '''print "Record Nums----"
+  print "record Count"
+  print recordCount
+  print "Old Record Count"
+  print oldRecordCount
+  print "Len RecordARR"
+  print len(recordArr)
+  print "---EndNums"
+  '''
+  if((recordCount - oldRecordCount) > len(recordArr)):
+    p = recordCount - len(recordArr)
+  else:
+    p = recordCount - len(recordArr) + 1
   for record in recordArr:
-    if(displayAndKeepRecord(record)):
+    if(displayAndKeepRecord(record,p)):
       #print len(record.data)
       #print record.type
       #+str(record.version)+str(record.length)+str(record.data)
@@ -118,11 +193,13 @@ def driver(data):
       packet += struct.pack(pack_format,record.type,record.version,record.length,record.data)
       logger.debug('Normal Record Packet Construction: Packet Length %d', len(packet))
     else:
+      p += 1
       continue
+    p += 1
   if(len(incRecordBuffer)):
     #show record info to the user
-    logger.debug('Incomplete Record: \nRecord Type-%s\nRecord version-%s\nRecord Length-%s\n',binascii.hexlify(str(incRecordBufferStruct.type)),binascii.hexlify(str(incRecordBufferStruct.version)),binascii.hexlify(str(incRecordBufferStruct.length)))
-    if(displayAndKeepRecord(record)):
+    logger.debug('Received Record: \nRecord Type-%d\nRecord Length-%d\n',record.type,record.length)
+    if(displayAndKeepRecord(record,recordCount)):
       if(len(incRecordBuffer)):
         try:
           packet += incRecordBuffer
@@ -132,5 +209,5 @@ def driver(data):
           print e
     else:
       incRecordBufferDrop = 1
-
+  logger.info()
   return packet
