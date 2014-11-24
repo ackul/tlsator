@@ -18,5 +18,5 @@ How the analysis would look like
 
 On the client side use: 
 wget --debug https://<ProxyURL><Port> to verify 
-
+wget --debug --no-check-certificate -P . -A jpeg https://<ip,port>
  
