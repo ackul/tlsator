@@ -1,6 +1,22 @@
 tlsator
 =======
- wget --debug  --no-check-certificate https://128.105.175.15:4433
+SSL Data is encapsulated using the record layer. For most of the SSL stack, a single packet would contain a full record. However, this is not true for Handshake and Application Data protocols. The SSL spec says that only if the record is greater than 2 ^ 14 bytes an exception should be raised. The TCP fragmentation limit is around 1514. Hence, any SSL record greater than 1514 would be sent in two different TCP segments. 
+ 
+Most of the contemporary Packet Parsing libraries assume that an entire ssl record would be seen in a packet otherwise an exception is raised. 
+ 
+TLSator aims at providing a functionality which allows the user to drop record on the fly. The idea is to see how application react on such an event.  
+
+![alt tag](https://raw.githubusercontent.com/achinkulshrestha/tlsator/master/readme-imgs/Help.PNG)
+
+
+How the analysis would look like
+
+![alt tag](https://raw.githubusercontent.com/achinkulshrestha/tlsator/master/readme-imgs/analysis.PNG)
 
  
-I see this packet inside a data stream, this seems like a handshake packet. Something is really wrong. 1603030067020000630303b3bef46741d6ab340811767ef9bc2d09ab6d832de71a01fec2818508c85ddd892077287c02cc7b9e58ce01dd47ee5e420c9c5a28a9e0d7f9dbeca6743043919349009c00001bff010001003374001208687474702f312e3108687474702f312e30140303000101160303002862779391cc0e2c27365d482dbe6f18d27793963506bcb0883e7be0dd822dddea800fccde886a5ddc
+
+
+On the client side use: 
+wget --debug https://<ProxyURL><Port> to verify 
+
+ 
