@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 LISTEN_PORT = 443
-SERVER_PORT = 443
-SERVER_ADDR = "www.facebook.com"
+SERVER_PORT = 4433
+SERVER_ADDR = "128.105.175.15"
 import dpkt
 from twisted.internet import protocol, reactor
 from twisted.python import log

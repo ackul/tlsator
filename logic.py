@@ -164,7 +164,7 @@ def driver(data):
         d[key] = [recordCount]
       if (key == 21 and analyze):
         printDictionary(d)
-        
+
 
       #print record.type
       logger.debug('Multifactory Output: \nStart Position-%d\nbytes parsed -%d\nincFlag-%d\nincRecLength-%d\nRecord Count-%d', i, bytes_parsed,incFlag,incRecLength,recordCount)
