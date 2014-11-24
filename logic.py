@@ -24,7 +24,15 @@ class incStruct():
 
 def displayRecord(record):
   if record.type == 22:
-    logger.info("TLS Handshake Record")
+    flag = 0
+    handshakeTy = ord(record.data[0])
+    #print handshakeTy
+    for key in HANDSHAKE_TYPE:
+      if key == str(handshakeTy):
+        flag = 1
+        logger.info("Handshake Record: %s", HANDSHAKE_TYPE[key])
+    if(flag==0):
+      logger.info("Handshake Record: %s", HANDSHAKE_TYPE['21'])
   elif record.type== 21:
     logger.info("TLS Alert Record")
   elif record.type == 20:
@@ -53,6 +61,21 @@ RECORD_TYPE = {
     23: 'TLSAppData',
 }
 
+HANDSHAKE_TYPE = {
+    '0': 'HelloRequest',
+    '1': 'ClientHello',
+    '2': 'ServerHello',
+    '4': 'New Session Ticket',
+    '11':'Certificate',
+    '12':'ServerKeyExchange',
+    '13':'CertificateRequest',
+    '14':'ServerHelloDone',
+    '15':'CertificateVerify',
+    '16':'ClientKeyExchange',
+    '20':'Finished',
+    '21':'Encrypted Handshake Message'
+}
+
 def printDictionary(d):
   logger.info("Record Stats are as follows:")
   for key in d:
@@ -70,7 +93,7 @@ def displayAndKeepRecord(record, count):
 
 def driver(data):
 
-  logger.info('Driver-SSL data of length %d',len(data))
+  logger.debug('Driver-SSL data of length %d',len(data))
   global incRecordBuffer
   global incRecordBufferStruct
   global dataOffsetInTheNextPacket
@@ -141,6 +164,7 @@ def driver(data):
         d[key] = [recordCount]
       if (key == 21 and analyze):
         printDictionary(d)
+        
 
       #print record.type
       logger.debug('Multifactory Output: \nStart Position-%d\nbytes parsed -%d\nincFlag-%d\nincRecLength-%d\nRecord Count-%d', i, bytes_parsed,incFlag,incRecLength,recordCount)
@@ -209,5 +233,4 @@ def driver(data):
           print e
     else:
       incRecordBufferDrop = 1
-  logger.info()
   return packet

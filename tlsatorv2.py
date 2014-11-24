@@ -34,7 +34,8 @@ class ServerProtocol(protocol.Protocol):
         if(var=="y"):
           data=""
         else:'''
-        #logic.driver(data)
+        #logger.info("Packet Received: Client -> Server")
+        #data = logic.driver(data)
         if self.client:
             self.client.write(data)
         else:
@@ -55,7 +56,7 @@ class ClientProtocol(protocol.Protocol):
 
     # Server => Proxy
     def dataReceived(self, data):
-      logger.debug("Received Data from the server")
+      logger.info("Packet Received: Server -> Client")
       newData = logic.driver(data)
       #print "Writing new data"
       self.factory.server.write(newData)
@@ -121,7 +122,7 @@ if __name__ == '__main__':
     if(len(recordnos)):
       recordnosList = recordnos.split(',')
       logic.recordnosList = [int(i) for i in recordnosList]
-      logger.info("I will stop the record flow at: %s",logic.recordnosList)
+      logger.info("I will stop the record flow at %s", logic.recordnosList)
 
     import logging.config
     if(logToFile):
