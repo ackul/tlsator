@@ -39,7 +39,7 @@ def displayRecord(record):
     logger.info("TLS ChangeCipherSpec")
   elif record.type == 23:
     logger.info("TLS Application Data")
-  logger.debug('Received Record: \nRecord Type-%d\nRecord Length-%d\n',record.type,record.length)
+  logger.info('Received Record: Record Length-%d\n', record.length)
 
 def keepRecord(record, count):
   global recordnosList
@@ -50,8 +50,11 @@ def keepRecord(record, count):
       logger.info("We have reached Record count - %d", count)
       decision = raw_input("do you want to cancel this record y/n?: ")
       if(decision == "y"):
-        print "Returning 0"
+        print "Packet Dropped..."
         return 0
+    if record.type == 21:
+      print "Dropped alert as well"
+      return 0
   return 1
 
 RECORD_TYPE = {
@@ -163,6 +166,8 @@ def driver(data):
       else:
         d[key] = [recordCount]
       if (key == 21 and analyze):
+        printDictionary(d)
+      elif recordCount > 5:
         printDictionary(d)
 
 

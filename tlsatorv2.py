@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-LISTEN_PORT = 443
-SERVER_PORT = 4433
-SERVER_ADDR = "128.105.175.15"
+LISTEN_PORT = 8077
+SERVER_PORT = 8070
+SERVER_ADDR = '172.16.3.14'
 import dpkt
 from twisted.internet import protocol, reactor
 from twisted.python import log
@@ -34,8 +34,8 @@ class ServerProtocol(protocol.Protocol):
         if(var=="y"):
           data=""
         else:'''
-        #logger.info("Packet Received: Client -> Server")
-        #data = logic.driver(data)
+        logger.info("Packet Received: Client -> Server")
+        data = logic.driver(data)
         if self.client:
             self.client.write(data)
         else:
@@ -57,9 +57,9 @@ class ClientProtocol(protocol.Protocol):
     # Server => Proxy
     def dataReceived(self, data):
       logger.info("Packet Received: Server -> Client")
-      newData = logic.driver(data)
+      #data = logic.driver(data)
       #print "Writing new data"
-      self.factory.server.write(newData)
+      self.factory.server.write(data)
 
     # Proxy => Server
     def write(self, data):
